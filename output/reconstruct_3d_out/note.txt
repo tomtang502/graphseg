@@ -1,0 +1,1 @@
+This directory hold initial output of 3D reconstruction from RGB images.

@@ -1,0 +1,9 @@
+[submodule "dust3r"]
+	path = third_party/dust3r
+	url = https://github.com/naver/dust3r.git
+[submodule "roma"]
+	path = third_party/roma
+	url = https://github.com/Parskatt/RoMa.git
+[submodule "langsam"]
+	path = third_party/langsam
+	url = https://github.com/luca-medeiros/lang-segment-anything.git

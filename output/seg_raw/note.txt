@@ -1,0 +1,1 @@
+This directory hold initial output of 2D class agnostic noisy segmentation.
