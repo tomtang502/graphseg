@@ -28,7 +28,7 @@ Detailed instruction, chekcpoint download script, etc. coming soon!
 GraphSeg is designed for robot planning and manipulation on a tabletop, so we also conducted grasping experiments using Unitree Z1 Arm.
 <table>
   <tr>
-    <td><img src="/figures/gs_abs.png" alt="Method Abs"></td>
-    <td><img src="/figures/grasp.gif" alt="Grasp exp"></td>
+    <td><img src="/figures/gs_abs.png" alt="Method Abs" width="300"></td>
+    <td><img src="/figures/grasp.gif" alt="Grasp exp" width="500"></td>
   </tr>
 </table>
