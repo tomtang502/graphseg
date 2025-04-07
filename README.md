@@ -44,3 +44,14 @@ GraphSeg is designed for robot planning and manipulation on a tabletop, so we al
     <td><img src="/figures/grasp.gif" alt="Grasp exp" width="500"></td>
   </tr>
 </table>
+
+
+## Attribution
+
+This repository is implemented based on the following dependencies.
+
+[Dust3r](https://github.com/naver/dust3r) under [CC BY-NC-SA 4.0 License](https://creativecommons.org/licenses/by-nc-sa/4.0/) 
+
+[RoMa](https://github.com/Parskatt/RoMa.git) under [MIT License](https://github.com/Parskatt/RoMa/blob/main/LICENSE) and its dependency [DINOv2](https://github.com/facebookresearch/dinov2.git) under [Apache 2 License](https://github.com/facebookresearch/dinov2/blob/main/LICENSE)
+
+[Language Segment-Anything](https://github.com/luca-medeiros/lang-segment-anything.git) under [Apache 2 License](https://github.com/luca-medeiros/lang-segment-anything/blob/main/LICENSE)
