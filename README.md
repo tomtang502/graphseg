@@ -1,10 +1,22 @@
 ## GraphSeg
-This repository is the official implementation of the paper [GraphSeg: Segmented 3D Representations via Graph Edge Addition and Contraction](https://github.com/tomtang502/graphseg). It contains a combination of real world experiments we ran, instruction to run GraphSeg on some standard dataset, along with the implementation of method itself. 
+GrasphSeg provides state-of-the-art 3D segmentation from multi-view images, without depth information. This repository is the official implementation of the paper [GraphSeg: Segmented 3D Representations via Graph Edge Addition and Contraction](https://github.com/tomtang502/graphseg). It contains a combination of real world experiments we ran, instruction to run GraphSeg on some standard dataset, along with the implementation of method itself. 
+
+Please cite our work via the bibtex:
+```bash
+@article{tang2025graphsegsegmented3drepresentations,
+   title={GraphSeg: Segmented 3D Representations via Graph Edge Addition and Contraction},
+   author={Haozhan Tang and Tianyi Zhang and Oliver Kroemer and Matthew Johnson-Roberson and Weiming Zhi},
+   journal={arXiv preprint arXiv:2504.03129},
+   year={2025}
+}
+```
+
 ![Method Overview](/figures/gseg_overview.jpg)
+
 
 ## Installation
 
-It's recommended to use a package manager like [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) to create a package environment to install and manage required dependencies, and the following installation guide assume a conda base environment is already initiated. Our code is tested on [Ubuntu 22.04.5 LTS (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/).
+It's recommended to use a package manager like [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) to create a package environment to install and manage required dependencies, and the following installation guide assumes a conda base environment is already initiated. Our code is tested on [Ubuntu 22.04.5 LTS (Jammy Jellyfish)](https://releases.ubuntu.com/jammy/).
 
 ```bash
 git clone --recursive https://github.com/tomtang502/graphseg.git graphseg
