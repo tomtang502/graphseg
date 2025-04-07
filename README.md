@@ -1,5 +1,5 @@
 ## GraphSeg
-GrasphSeg provides state-of-the-art 3D segmentation from multi-view images, without depth information. This repository is the official implementation of the paper [GraphSeg: Segmented 3D Representations via Graph Edge Addition and Contraction](https://github.com/tomtang502/graphseg). It contains a combination of real world experiments we ran, instruction to run GraphSeg on some standard dataset, along with the implementation of method itself. 
+GrasphSeg provides state-of-the-art 3D segmentation from multi-view images, without depth information. This repository is the official implementation of the paper [GraphSeg: Segmented 3D Representations via Graph Edge Addition and Contraction](https://arxiv.org/abs/2504.03129). It contains a combination of real world experiments we ran, instruction to run GraphSeg on some standard dataset, along with the implementation of method itself. 
 
 Please cite our work via the bibtex:
 ```bash
