@@ -55,3 +55,8 @@ This repository is implemented based on the following dependencies.
 [RoMa](https://github.com/Parskatt/RoMa.git) under [MIT License](https://github.com/Parskatt/RoMa/blob/main/LICENSE) and its dependency [DINOv2](https://github.com/facebookresearch/dinov2.git) under [Apache 2 License](https://github.com/facebookresearch/dinov2/blob/main/LICENSE)
 
 [Language Segment-Anything](https://github.com/luca-medeiros/lang-segment-anything.git) under [Apache 2 License](https://github.com/luca-medeiros/lang-segment-anything/blob/main/LICENSE)
+
+
+## License
+
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en)
