@@ -20,3 +20,6 @@ pip install plotly==6.0.0
 pip install --extra-index-url=https://pypi.nvidia.com "cudf-cu12==25.2.2" "cuml-cu12==25.2.1"
 
 # download checkpoints
+cd checkpoints
+chmod +x download_ckpts.sh
+./download_ckpts.sh

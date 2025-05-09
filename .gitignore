@@ -2,5 +2,4 @@ src/__pycache__
 src/helpers/__pycache__
 src/visualize/__pycache__
 
-checkpoints/*
 data/*
