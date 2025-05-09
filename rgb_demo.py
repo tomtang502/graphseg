@@ -107,7 +107,7 @@ def main(
     run optical feature matching
     """
     print("Step 2: [FM]")
-    fm_save_file = f"{fm_out_dir}/{save_name}__fm.pkl"
+    fm_save_file = f"{fm_out_dir}/{save_name}_fm.pkl"
     if len(rgbs) > 5: 
         mode='bithresh'
     else:
