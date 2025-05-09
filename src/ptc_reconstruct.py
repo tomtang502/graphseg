@@ -44,6 +44,7 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
         xyzs, rgbs (reshaped), cam_poses, eef_poses
     """
     out_file = f"{out_dir}/{exp_name}.pth"
+    caliberated_out_file = f"{out_dir}/{exp_name}_caliberated.pth"
     if not os.path.exists(out_file):
         temp_dir = save_images_to_temp(rgbs)
 
@@ -71,6 +72,14 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
         loss_info = f'{exp_name} trans loss: {t_L.mean()}, rot loss: {R_L.mean()}\n'
         print(loss_info)
 
+        save_dict = {
+            "xyzs": ptc.reshape(N, H, W, 3),
+            'rgbs': rgbs.reshape(N, H, W, 3),
+            'c2w_poses': cam_pose,
+            'eef_poses': eef_poses_tor.numpy()
+        }
+        
+        torch.save(save_dict, caliberated_out_file)
         if visualize:
             plot_eef_and_camera_poses(eef_poses_tor.numpy(), cam_pose, ptc[::visualize_stride], rgb=rgbs.reshape(-1, 3)[::visualize_stride])
         return ptc.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), cam_pose, eef_poses_tor.numpy()
