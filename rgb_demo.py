@@ -41,11 +41,15 @@ def print_gpu_usage(label=""):
 
 def main(
     rgbs_o, # initial rgb file, should be >= 480 x 640 resolution
-    xyzs, rgbs, poses,
+    xyzs, rgbs, poses, conf_3d_masks,
     save_name='demo',
     bg_prompt = "white table",
     dist_thresh = 0.7, # adjust this, depending on camera configuration.
     fm_numpoints = 10000,
+    fm_2d_percentile = 78, 
+    one_way_3d_group_thresh = 5e-5,
+    viz_res = False,
+    rerun_anyway = False,
     sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt",
     model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml",
     fm_out_dir = "output/fm_raw",
@@ -54,7 +58,7 @@ def main(
     stage_2_dir = "output/seg_res_gc2",
     seg_group_thresh = None, # set this, otherwise use percentile
 ):
-    print(rgbs_o.shape, rgbs.shape, xyzs.shape, poses.shape)
+    print(rgbs_o.shape, rgbs.shape, xyzs.shape, poses.shape, conf_3d_masks.shape)
     
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -66,7 +70,7 @@ def main(
     """
     print("Step 1: [Segmentation]")
     mask_save_file = f"{seg_out_dir}/{save_name}_masks.pkl"
-    if not os.path.exists(mask_save_file):
+    if rerun_anyway or (not os.path.exists(mask_save_file)):
         H_resize, W_resize = rgbs.shape[1], rgbs.shape[2]
         langsam_model = LangSAM(sam_type="sam2.1_hiera_large", device=device)
         table_segs = seg_table(langsam_model, 
@@ -112,7 +116,7 @@ def main(
         mode='bithresh'
     else:
         mode='complete'
-    if not os.path.exists(fm_save_file):
+    if rerun_anyway or (not os.path.exists(fm_save_file)):
         roma_model = roma_outdoor(device=device, coarse_res=560, upsample_res=(864, 1152))
         fm_images(roma_model=roma_model, poses=torch.tensor(poses), rgbs=rgbs, device=device, save_path=fm_save_file, 
                 num_points=fm_numpoints, viz_feature_match=False, mode=mode,
@@ -141,10 +145,10 @@ def main(
     """
     print("Step 4: [GC]")
     gc1_file_path = f"{stage_1_dir}/{save_name}_s1.pkl"
-    if not os.path.exists(gc1_file_path):
+    if rerun_anyway or (not os.path.exists(gc1_file_path)):
         seg_edge_cost = build_edges(seg_masks, fm_raw, mid_to_mask=mid_to_mask, xyzs=xyzs)
         if seg_group_thresh is None:
-            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), 78)
+            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), fm_2d_percentile)
         print(f"seg_group_thresh: {seg_group_thresh}")
         seg_masks_new, root_verts_cnt = uf_graph_contraction(seg_edge_cost, seg_vertex_cnt, 
                                             mid_to_img_id=mid_to_img_id, mid_to_mask=mid_to_mask, 
@@ -173,8 +177,8 @@ def main(
     """
     print("Step 5: [Filter and 1-way nearest neighbor graph contraction]")
     gc2_file_path = f"{stage_2_dir}/{save_name}_res.pkl"
-    if not os.path.exists(gc2_file_path):
-        res_masks = filter_gc(seg_raw=semi_consist_data, filter_invalid_depth=False, device=device)
+    if rerun_anyway or (not os.path.exists(gc2_file_path)):
+        res_masks = filter_gc(seg_raw=semi_consist_data, filter_invalid_depth=False, device=device, one_way_group_thresh=one_way_3d_group_thresh)
         with open(gc2_file_path, "wb") as f:
             pickle.dump(res_masks, f)
     else:
@@ -184,15 +188,17 @@ def main(
     # """
     # visualize results
     # """
-    print("plotting")
-    visualize_images_with_composed_masks_interactive(rgbs, res_masks, len(np.unique(res_masks)), cmap_mask='hsv', cmap_skip=15)
     
+    if viz_res:
+        print("plotting")
+        visualize_images_with_composed_masks_interactive(rgbs, res_masks, len(np.unique(res_masks)), cmap_mask='hsv', cmap_skip=15)
+        
 
-    sample_steps=10    
-    xyzs, rgbs = xyzs.reshape(-1, 3)[::sample_steps], rgbs.reshape(-1, 3)[::sample_steps]
-    res_masks = res_masks.reshape(-1,)[::sample_steps]
-    
-    viz_ptc(xyzs, rgbs, res_masks, cmap_name='tab20', cmap_skip=15)
+        sample_steps=10    
+        xyzs, rgbs = xyzs.reshape(-1, 3)[::sample_steps], rgbs.reshape(-1, 3)[::sample_steps]
+        res_masks = res_masks.reshape(-1,)[::sample_steps]
+        
+        viz_ptc(xyzs, rgbs, res_masks, cmap_name='tab20', cmap_skip=15)
     
 if __name__ == "__main__":
     
@@ -201,14 +207,14 @@ if __name__ == "__main__":
     data_o = read_pkl(f"data/{exp_name}.pkl")
     rgbs_o = data_o['rgb'][..., ::-1] # a bgr camera output should be reverse to rgb
     eef_poses = data_o['poses'] # end effector poses, theoretically this is not needed, if this is None, also set caliberate below to be False
-
-    xyzs, rgbs, cam_poses, _ = reconstruct_3d(exp_name=exp_name, rgbs=rgbs_o, eef_poses=eef_poses, ckpt_path=dust3r_ckpt_path, caliberate=True)
+    rerun = False
+    xyzs, rgbs, cam_poses, _, masks = reconstruct_3d(exp_name=exp_name, rgbs=rgbs_o, eef_poses=eef_poses, ckpt_path=dust3r_ckpt_path, caliberate=True, rerun_anyway=rerun)
     gc.collect()
     torch.cuda.empty_cache()
     
     # Notice if cuda run out of memory here, it is possible that the 3D tensors and models are not cleaned correctly from gpu vram, 
     # simply run this script again will initialize the segmentation based on processed 3D scene.
     
-    main(rgbs_o=rgbs_o, xyzs=xyzs, rgbs=rgbs, poses=cam_poses, save_name=exp_name)
+    main(rgbs_o=rgbs_o, xyzs=xyzs, rgbs=rgbs, conf_3d_masks=masks, poses=cam_poses, save_name=exp_name, rerun_anyway=rerun)
 
     

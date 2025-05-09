@@ -32,7 +32,7 @@ def get_sorted_png_files(directory):
 
 def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3d_out", 
                    ckpt_path="checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
-                   visualize=True, visualize_stride=50, caliberate=False):
+                   visualize=True, visualize_stride=50, caliberate=False, rerun_anyway=False):
     """reconstruct 3d from rgb images
 
     Args:
@@ -45,7 +45,7 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
     """
     out_file = f"{out_dir}/{exp_name}.pth"
     caliberated_out_file = f"{out_dir}/{exp_name}_caliberated.pth"
-    if not os.path.exists(out_file):
+    if rerun_anyway or (not os.path.exists(out_file)):
         temp_dir = save_images_to_temp(rgbs)
 
         out_file = running_dust3r(out_file=out_file, file_paths=get_sorted_png_files(temp_dir), model_path=ckpt_path)
@@ -56,6 +56,7 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
         print(f"3D reconstruction from RGB images already processed, raw output saved at {out_file}")
     
     dust3r_raw = torch.load(out_file, weights_only=False)
+    masks = torch.stack(dust3r_raw['masks'])
     N, H, W, _ = np.stack(dust3r_raw['images']).shape
     rgbs, xyzs, w2c_poses_unaligned = np.stack(dust3r_raw['images']).reshape(-1, 3), torch.stack(dust3r_raw['pts']).reshape(-1, 3).to('cpu'), dust3r_raw['poses'].to('cpu')
     if caliberate:
@@ -82,11 +83,11 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
         torch.save(save_dict, caliberated_out_file)
         if visualize:
             plot_eef_and_camera_poses(eef_poses_tor.numpy(), cam_pose, ptc[::visualize_stride], rgb=rgbs.reshape(-1, 3)[::visualize_stride])
-        return ptc.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), cam_pose, eef_poses_tor.numpy()
+        return ptc.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), cam_pose, eef_poses_tor.numpy(), masks
     else:
         if visualize:
             plot_eef_and_camera_poses(w2c_poses_unaligned.numpy(), w2c_poses_unaligned.numpy(), xyzs[::visualize_stride], rgb=rgbs.reshape(-1, 3)[::visualize_stride])
-        return xyzs.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), w2c_poses_unaligned.numpy(), None
+        return xyzs.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), w2c_poses_unaligned.numpy(), None, masks
 
 # if __name__ == "__main__":
 #     exp_name = "1"
