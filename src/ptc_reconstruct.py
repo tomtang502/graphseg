@@ -6,7 +6,7 @@ from PIL import Image
 from src.dust3r_api import running_dust3r
 from src.helpers.data_process import read_pkl
 from src.visualize.viz_ptc import plot_eef_and_camera_poses
-from src.eth_jcr import compute_arm, transpose_poses_ptc, rpyxyz_to_T
+from src.jcr_sgd import compute_single_arms, transpose_poses_ptc, rpyxyz_to_T
 
 def save_images_to_temp(tensor):
     # Create a temporary directory
@@ -32,7 +32,7 @@ def get_sorted_png_files(directory):
 
 def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3d_out", 
                    ckpt_path="checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
-                   visualize=True, visualize_stride=50, caliberate=False, rerun_anyway=False):
+                   visualize=True, visualize_stride=50, caliberate=False, rerun_anyway=False, device='cuda'):
     """reconstruct 3d from rgb images
 
     Args:
@@ -58,17 +58,19 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
     dust3r_raw = torch.load(out_file, weights_only=False)
     masks = torch.stack(dust3r_raw['masks'])
     N, H, W, _ = np.stack(dust3r_raw['images']).shape
-    rgbs, xyzs, w2c_poses_unaligned = np.stack(dust3r_raw['images']).reshape(-1, 3), torch.stack(dust3r_raw['pts']).reshape(-1, 3).to('cpu'), dust3r_raw['poses'].to('cpu')
+    rgbs, xyzs, c2w_poses_unaligned = np.stack(dust3r_raw['images']).reshape(-1, 3), torch.stack(dust3r_raw['pts']).reshape(-1, 3).to('cpu'), dust3r_raw['poses'].to('cpu')
+    
+    eef_poses_tor =  torch.tensor(np.stack([rpyxyz_to_T(pose) for pose in eef_poses])).to('cpu')
+    assert eef_poses_tor.shape == c2w_poses_unaligned.shape, "Number of eef != Number of cam poses!"
+
+
     if caliberate:
         assert eef_poses is not None, "eef_poses need to be provided for eye to hand caliberation"
-        eef_poses_tor =  torch.tensor(np.stack([rpyxyz_to_T(pose) for pose in eef_poses])).to('cpu')
-        assert eef_poses_tor.shape == w2c_poses_unaligned.shape, "Number of eef != Number of cam poses!"
-        
-        T, scale, J, R_L, t_L = compute_arm(eef_poses_tor.clone(), w2c_poses_unaligned.clone(), arm1=True)
+        T, X, scale, J, R_L, t_L = compute_single_arms(eef_poses_tor.clone(), c2w_poses_unaligned.clone(), device=device)
 
-        w2c_poses_unaligned[:,:3,3]=w2c_poses_unaligned[:,:3,3]*scale
+        c2w_poses_unaligned[:,:3,3]=c2w_poses_unaligned[:,:3,3]*scale
         xyzs = xyzs*scale
-        cam_pose, ptc = transpose_poses_ptc(w2c_poses_unaligned, xyzs, T)
+        cam_pose, ptc = transpose_poses_ptc(c2w_poses_unaligned, xyzs, T)
 
         loss_info = f'{exp_name} trans loss: {t_L.mean()}, rot loss: {R_L.mean()}\n'
         print(loss_info)
@@ -86,8 +88,8 @@ def reconstruct_3d(exp_name, rgbs, eef_poses=None, out_dir="output/reconstruct_3
         return ptc.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), cam_pose, eef_poses_tor.numpy(), masks
     else:
         if visualize:
-            plot_eef_and_camera_poses(w2c_poses_unaligned.numpy(), w2c_poses_unaligned.numpy(), xyzs[::visualize_stride], rgb=rgbs.reshape(-1, 3)[::visualize_stride])
-        return xyzs.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), w2c_poses_unaligned.numpy(), None, masks
+            plot_eef_and_camera_poses(c2w_poses_unaligned.numpy(), c2w_poses_unaligned.numpy(), xyzs[::visualize_stride], rgb=rgbs.reshape(-1, 3)[::visualize_stride])
+        return xyzs.reshape(N, H, W, 3),  rgbs.reshape(N, H, W, 3), c2w_poses_unaligned.numpy(), None, masks
 
 # if __name__ == "__main__":
 #     exp_name = "1"

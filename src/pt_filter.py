@@ -79,6 +79,7 @@ def plot_point_cloud(xyz, rgb, marker_size=1, opacity=.8):
     
 def filter_gc(
     seg_raw, 
+    conf_3d_masks,
     filter_invalid_depth=True, 
     grid_size=10, 
     DBSCAN_eps = 0.01,          # maximum distance between two samples to be considered neighbors
@@ -124,7 +125,7 @@ def filter_gc(
         outlier_mask = (labels == -1).to_numpy()
         nid, hid, wid = nid[outlier_mask], hid[outlier_mask], wid[outlier_mask]
         filtered_seg_masks[nid, hid, wid] = 0
-        
+    filtered_seg_masks[torch.logical_not(conf_3d_masks).cpu().numpy()] = 0
     xyzs_tr = torch.tensor(xyzs.reshape(-1, 3), device=device)
     semi_consist_masks_tr = torch.tensor(filtered_seg_masks.reshape(-1,), device=device, dtype=torch.int32)
     

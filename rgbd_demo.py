@@ -20,7 +20,10 @@ from lang_sam import LangSAM
 from romatch import roma_outdoor
 from sam2.build_sam import build_sam2
 
+"""
+RGBD need to be chanegs
 
+"""
 pynvml.nvmlInit()
 
 def print_gpu_usage(label=""):

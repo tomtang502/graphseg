@@ -1,5 +1,6 @@
 import torch
 from src.helpers.uf_tool import UnionFind
+from src.helpers.data_process import ensure_tensor
 from src.visualize.viz_masks import *
 import matplotlib.pyplot as plt
 
@@ -37,8 +38,8 @@ def get_dist_mask(xyzs, rgbs, poses, depths=None, use_depth=False, dist_thresh=0
     return dist_masks
 
 def get_bg_mask(xyzs, rgbs, poses, table_masks, depths=None, use_depth=False, dist_thresh=0.38, viz_dist=False, viz_bg=False):
-    dist_masks = get_dist_mask(torch.tensor(xyzs), rgbs, torch.tensor(poses), 
-                               None if depths is None else torch.tensor(depths), use_depth=use_depth, dist_thresh=dist_thresh, viz=viz_dist)
+    dist_masks = get_dist_mask(ensure_tensor(xyzs), rgbs, ensure_tensor(poses), 
+                               None if depths is None else ensure_tensor(depths), use_depth=use_depth, dist_thresh=dist_thresh, viz=viz_dist)
     bg_mask = [np.logical_or(table_masks[i][0], dist_masks[i].cpu().numpy()) for i in range(len(table_masks))]
     if viz_bg:
         if isinstance(rgbs, list):
@@ -85,7 +86,7 @@ def pairwise_intersection_numpy(masks: np.ndarray) -> np.ndarray:
     
     return intersection_matrix
 
-def build_edges(seg_masks, fm_raw, mid_to_mask, xyzs, device='cuda', use_pt_dist_thresh=False):
+def build_edges(seg_masks, fm_raw, mid_to_mask, xyzs, conf_masks, device='cuda'):
     seg_masks = np.stack(seg_masks)
     seg_edge_hit, seg_edge_cost, seg_vertex_hit = dict(), dict(), dict()
     y_max, x_max = seg_masks[0].shape
@@ -101,19 +102,26 @@ def build_edges(seg_masks, fm_raw, mid_to_mask, xyzs, device='cuda', use_pt_dist
         kpts_certain[:, 3] = kpts_certain[:, 3].clamp(0, y_max-1)
         seg_ms1, seg_ms2 = seg_masks[img1_id], seg_masks[img2_id]
         ptc_ms1, ptc_ms2 = xyzs[img1_id], xyzs[img2_id]
+        conf_ms1, conf_ms2 = conf_masks[img1_id], conf_masks[img2_id]
         c1, r1, c2, r2 = kpts_certain.T.to('cpu')
         us = seg_ms1[r1, c1]
         vs = seg_ms2[r2, c2]
         coords1 = ptc_ms1[r1, c1]
-        coords2 = ptc_ms2[r1, c1]
-        diff = np.linalg.norm(coords2-coords1, axis=1)
+        coords1_valid = conf_ms1[r1, c1]
+        coords2 = ptc_ms2[r2, c2]
+        coords2_valid = conf_ms2[r2, c2]
         
         uv = np.stack((us, vs), axis=-1)
-        non_bg_mask = (uv[:, 0] != 0) & (uv[:, 1] != 0)
+        non_bg_mask = torch.tensor((uv[:, 0] != 0) & (uv[:, 1] != 0)).to(device)
+        both_valid = torch.logical_and(coords1_valid, coords2_valid)
+        valid_mask = torch.logical_and(both_valid, non_bg_mask).cpu().numpy()
+        # print(non_bg_mask.sum(), both_valid.sum(), valid_mask.shape, valid_mask.sum())
 
-        diff_sel = diff[non_bg_mask]
-        uv_sel = uv[non_bg_mask]
-        mean_distance = np.percentile(diff_sel, 70)
+        diff = np.linalg.norm(coords2-coords1, axis=1)
+
+        diff_sel = diff[valid_mask]
+        uv_sel = uv[valid_mask]
+        mean_distance = np.percentile(diff_sel, 75)
         diff_tsel_mask = diff_sel < mean_distance
         
         uv_sel = uv_sel[diff_tsel_mask]
