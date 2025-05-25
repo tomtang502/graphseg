@@ -83,9 +83,9 @@ def filter_gc(
     filter_invalid_depth=True, 
     grid_size=10, 
     DBSCAN_eps = 0.01,          # maximum distance between two samples to be considered neighbors
-    DBSCAN_min_samples = 60,   # minimum number of neighbors to form a dense region
+    DBSCAN_min_samples = 100,   # minimum number of neighbors to form a dense region
     one_way_group_thresh = 5e-5,
-    process_pts_max = 15000, # adjust based on GPU VRAM, this is for 16GB laptop 4090
+    process_pts_max = 18000, # adjust based on GPU VRAM, this is for 16GB laptop 4090
     device='cuda'):
     
     xyzs, rgbs = seg_raw['xyzs'], seg_raw['rgbs']
@@ -113,7 +113,7 @@ def filter_gc(
     filtered_seg_masks = seg_masks.copy()
     hids, nids, wids = np.meshgrid(list(range(H)), list(range(N)), list(range(W)))
     # visualize_images_with_composed_masks_interactive(rgbs, seg_masks, vertex_cnt=len(uids))
-    for uid in uids[1:20]:
+    for uid in uids:
         xyz = xyzs[seg_masks==uid].reshape(-1, 3)
         nid, hid, wid = nids[seg_masks==uid].reshape(-1,), hids[seg_masks==uid].reshape(-1,), wids[seg_masks==uid].reshape(-1,)
        

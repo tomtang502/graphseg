@@ -47,7 +47,7 @@ def main(
     dist_thresh = 0.7, # adjust this, depending on camera configuration.
     fm_numpoints = 10000,
     fm_2d_percentile = 80, 
-    one_way_3d_group_thresh = 5e-5,
+    one_way_3d_group_thresh = 1e-5,
     viz_res = False,
     rerun_anyway = False,
     sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt",
@@ -146,7 +146,8 @@ def main(
     print("Step 4: [GC]")
     gc1_file_path = f"{stage_1_dir}/{save_name}_s1.pkl"
    
-    if rerun_anyway or (not os.path.exists(gc1_file_path)):
+    # if rerun_anyway or (not os.path.exists(gc1_file_path)):
+    if True:
         seg_edge_cost = build_edges(seg_masks, fm_raw, mid_to_mask=mid_to_mask, xyzs=xyzs, conf_masks=conf_3d_masks)
         if seg_group_thresh is None:
             seg_group_thresh = np.percentile(list(seg_edge_cost.values()), fm_2d_percentile)
@@ -173,12 +174,14 @@ def main(
             semi_consist_data = pickle.load(file)
     torch.cuda.empty_cache()
     # print(semi_consist_data['xyzs'].shape, semi_consist_data['xyzs'].type())
+    
     """
     one way nearest neighbor
     """
     print("Step 5: [Filter and 1-way nearest neighbor graph contraction]")
     gc2_file_path = f"{stage_2_dir}/{save_name}_res.pkl"
-    if rerun_anyway or (not os.path.exists(gc2_file_path)):
+    # if rerun_anyway or (not os.path.exists(gc2_file_path)):
+    if True:
         res_masks = filter_gc(seg_raw=semi_consist_data, conf_3d_masks=conf_3d_masks, filter_invalid_depth=False, device=device, one_way_group_thresh=one_way_3d_group_thresh)
         with open(gc2_file_path, "wb") as f:
             pickle.dump(res_masks, f)

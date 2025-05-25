@@ -121,7 +121,7 @@ def build_edges(seg_masks, fm_raw, mid_to_mask, xyzs, conf_masks, device='cuda')
 
         diff_sel = diff[valid_mask]
         uv_sel = uv[valid_mask]
-        mean_distance = np.percentile(diff_sel, 75)
+        mean_distance = np.percentile(diff_sel, 25)
         diff_tsel_mask = diff_sel < mean_distance
         
         uv_sel = uv_sel[diff_tsel_mask]
