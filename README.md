@@ -26,14 +26,21 @@ cd graphseg
 conda create -n graphseg python=3.10 cmake=3.14.0 -y
 conda activate graphseg
 
-# install graphseg
-sudo chmod +x installation.sh 
-./installation.sh
+# install graphseg, this also download model checkpoints
+sudo chmod +x installation.sh
+./installation.sh 
 
 ```
 
-## Download Checkpoints and Data
-Detailed instruction, chekcpoint download script, etc. coming soon!
+## Download Data
+
+To download some sample data (RGB and RGB-D) used by GraphsSeg, you can download it directly via this [google drive link](https://drive.google.com/drive/folders/1A4F5-82ZdxgLEbl3t3qiVu3M1Nc2Gfu3?usp=sharing) or run the following script.
+
+```bash
+# install graphseg
+sudo chmod +x download_sample_data.sh
+./download_sample_data.sh
+```
 
 
 ## Grasping Experiments:
