@@ -338,5 +338,6 @@ def visualize_images_with_composed_masks_interactive(images, masks_list, vertex_
     fig.canvas.mpl_connect('button_press_event', on_click)
     
     plt.tight_layout()
+    print("[Due to color scheme, method classified as different class may receive similar color, click on the segment to see which class it belongs to!]")
     # plt.savefig("output.png")
     plt.show()

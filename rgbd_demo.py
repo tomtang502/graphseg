@@ -44,6 +44,7 @@ def main(
     bg_prompt = "dark green table",
     dist_thresh = 0.7, # adjust this, depending on camera configuration.
     fm_numpoints = 10000,
+    percentile_thresh_2D = 78,
     sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt",
     model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml",
     fm_out_dir = "output/fm_raw",
@@ -139,7 +140,7 @@ def main(
     if not os.path.exists(gc1_file_path):
         seg_edge_cost = build_edges(seg_masks, fm_raw, mid_to_mask=mid_to_mask, xyzs=xyzs)
         if seg_group_thresh is None:
-            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), 78)
+            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), percentile_thresh_2D)
         print(f"seg_group_thresh: {seg_group_thresh}")
         seg_masks_new, root_verts_cnt = uf_graph_contraction(seg_edge_cost, seg_vertex_cnt, 
                                             mid_to_img_id=mid_to_img_id, mid_to_mask=mid_to_mask, 
@@ -179,18 +180,18 @@ def main(
     # """
     # visualize results
     # """
-    # visualize_images_with_composed_masks_interactive(rgbs, res_masks, len(np.unique(res_masks)), cmap_skip=10)
-    # print("plotting")
+    visualize_images_with_composed_masks_interactive(rgbs, res_masks, len(np.unique(res_masks)), cmap_skip=10)
+    print("plotting")
 
-    # sample_steps=10    
-    # xyzs, rgbs = xyzs.reshape(-1, 3)[::sample_steps], rgbs.reshape(-1, 3)[::sample_steps]
-    # res_masks = res_masks.reshape(-1,)[::sample_steps]
+    sample_steps=10    
+    xyzs, rgbs = xyzs.reshape(-1, 3)[::sample_steps], rgbs.reshape(-1, 3)[::sample_steps]
+    res_masks = res_masks.reshape(-1,)[::sample_steps]
     
-    # viz_ptc(xyzs, rgbs, res_masks, cmap_skip=10)
+    # viz_ptc(xyzs, rgbs, res_masks, cmap_skip=10) # TODO this is an outdated visualization code, update this to the lab version
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="demo for graspnet-1B dataset")
-    parser.add_argument('--scene_id', type=int, default=1, help='scene_id')
+    parser.add_argument('--scene_id', type=int, default=0, help='scene_id')
     parser.add_argument('--step_size', type=int, default=26, help='scene_id')
     args = parser.parse_args()
 
@@ -198,7 +199,7 @@ if __name__ == "__main__":
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    root_dir = "../ri_other/seg3d/graspnet/grnet_processed",
+    root_dir = "data"
     scene_name = f"scene_{args.scene_id:04d}"
     print(scene_name)
     rgbs, xyzs, poses, _, depths = get_grnet_data(root_dir, scene_name, args.step_size)

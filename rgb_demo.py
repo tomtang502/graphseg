@@ -46,6 +46,7 @@ def main(
     bg_prompt = "white table",
     dist_thresh = 0.7, # adjust this, depending on camera configuration.
     fm_numpoints = 10000,
+    percentile_thresh_2D = 78,
     sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt",
     model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml",
     fm_out_dir = "output/fm_raw",
@@ -144,7 +145,7 @@ def main(
     if not os.path.exists(gc1_file_path):
         seg_edge_cost = build_edges(seg_masks, fm_raw, mid_to_mask=mid_to_mask, xyzs=xyzs)
         if seg_group_thresh is None:
-            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), 78)
+            seg_group_thresh = np.percentile(list(seg_edge_cost.values()), percentile_thresh_2D)
         print(f"seg_group_thresh: {seg_group_thresh}")
         seg_masks_new, root_verts_cnt = uf_graph_contraction(seg_edge_cost, seg_vertex_cnt, 
                                             mid_to_img_id=mid_to_img_id, mid_to_mask=mid_to_mask, 
@@ -197,11 +198,10 @@ def main(
 if __name__ == "__main__":
     
     dust3r_ckpt_path="checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth"
-    exp_name = "robotc"
+    exp_name = "robotp"
     data_o = read_pkl(f"data/{exp_name}.pkl")
     rgbs_o = data_o['rgb'][..., ::-1] # a bgr camera output should be reverse to rgb
     eef_poses = data_o['poses'] # end effector poses, theoretically this is not needed, if this is None, also set caliberate below to be False
-
     xyzs, rgbs, cam_poses, _ = reconstruct_3d(exp_name=exp_name, rgbs=rgbs_o, eef_poses=eef_poses, ckpt_path=dust3r_ckpt_path, caliberate=True)
     gc.collect()
     torch.cuda.empty_cache()
